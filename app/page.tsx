@@ -1,23 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useMemo, useCallback, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import InputForm from './components/InputForm';
 import Results from './components/Results';
 import ThemeToggle from './components/ThemeToggle';
 import { calculateResults } from './utils/calculations';
-import { encodeFormData, decodeUrlParams } from './utils/urlEncoder';
+import { encodeFormData } from './utils/urlEncoder';
 import { FormData } from './types';
 import { Container, Typography, Paper, Box, useMediaQuery, useTheme, AppBar, Toolbar, Button, Snackbar, IconButton } from '@mui/material';
 import { presets } from './data/presets';
 import ShareIcon from '@mui/icons-material/Share';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseIcon from '@mui/icons-material/Close';
+import UrlParamsHandler from './components/UrlParamsHandler';
 
 export default function Home() {
   const theme = useTheme();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [formData, setFormData] = useState<FormData>({
@@ -40,61 +39,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
-
-  // Parse query parameters from URL on initial load - use a ref to ensure this only runs once
-  const initialLoadDone = useRef(false);
-  
-  useEffect(() => {
-    // Skip if we've already loaded from URL
-    if (initialLoadDone.current) return;
-    
-    const handleInitialUrlParams = () => {
-      const paramsExist = Array.from(searchParams.keys()).length > 0;
-      if (paramsExist) {
-        const initialFormData = { ...formData };
-        let paramUpdated = false;
-        
-        // Use the URL decoder to get form data and preset ID
-        const { formData: decodedFormData, presetId } = decodeUrlParams(searchParams);
-        
-        // Apply preset first if specified
-        if (presetId) {
-          const selectedPreset = presets.find(preset => preset.id === presetId);
-          if (selectedPreset) {
-            Object.assign(initialFormData, selectedPreset.data);
-            setSelectedPresetId(presetId);
-            paramUpdated = true;
-          }
-        }
-        
-        // Apply decoded form data
-        if (Object.keys(decodedFormData).length > 0) {
-          Object.assign(initialFormData, decodedFormData);
-          paramUpdated = true;
-        }
-        
-        // If params were found, update form data and calculate results
-        if (paramUpdated) {
-          // Mark that we've loaded from URL
-          initialLoadDone.current = true;
-          
-          // Update all state at once
-          setFormData(initialFormData);
-          
-          // Calculate results directly without going through state updates
-          const calculatedResults = calculateResults(initialFormData);
-          setResults(calculatedResults);
-        }
-      }
-    };
-    
-    // Set a small timeout to ensure the component is fully mounted
-    const timeoutId = setTimeout(() => {
-      handleInitialUrlParams();
-    }, 100);
-    
-    return () => clearTimeout(timeoutId);
-  }, []);
 
   // Helper function to calculate results
   const calculateAndSetResults = (data: FormData) => {
@@ -206,6 +150,19 @@ export default function Home() {
     );
   }, [results, handleYearSelect]);
 
+  // Handlers for the UrlParamsHandler
+  const handleFormDataUpdate = useCallback((data: FormData) => {
+    setFormData(data);
+  }, []);
+
+  const handleResultsUpdate = useCallback((calculatedResults: any) => {
+    setResults(calculatedResults);
+  }, []);
+
+  const handlePresetIdUpdate = useCallback((presetId: string) => {
+    setSelectedPresetId(presetId);
+  }, []);
+
   return (
     <Box sx={{ 
       backgroundColor: 'background.default', 
@@ -213,6 +170,16 @@ export default function Home() {
       display: 'flex',
       flexDirection: 'column'
     }}>
+      {/* Wrap useSearchParams in Suspense boundary */}
+      <Suspense fallback={null}>
+        <UrlParamsHandler 
+          formData={formData}
+          onFormDataUpdate={handleFormDataUpdate}
+          onResultsUpdate={handleResultsUpdate}
+          onPresetSelect={handlePresetIdUpdate}
+        />
+      </Suspense>
+
       {/* App Bar with Theme Toggle */}
       <AppBar position="static" color="default" elevation={1} sx={{ backgroundColor: 'background.paper' }}>
         <Toolbar>

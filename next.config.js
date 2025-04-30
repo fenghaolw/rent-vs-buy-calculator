@@ -5,6 +5,7 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  transpilePackages: ["geist"],
 }
 
 module.exports = nextConfig 
