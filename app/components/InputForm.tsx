@@ -16,7 +16,9 @@ import {
   MenuItem,
   Tooltip,
   IconButton,
-  SelectChangeEvent
+  SelectChangeEvent,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -39,6 +41,9 @@ export default function InputForm({
   onPresetSelect, 
   selectedPresetId = '' 
 }: InputFormProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const handlePresetChange = (event: SelectChangeEvent) => {
     const selectedPresetId = event.target.value;
     const selectedPreset = presets.find(preset => preset.id === selectedPresetId);
@@ -50,7 +55,8 @@ export default function InputForm({
   return (
     <Card elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ p: 3, flexGrow: 1, overflow: 'auto' }}>
-        <Typography variant="h6" gutterBottom>Input Assumptions</Typography>
+        {/* Don't show title on mobile view - it's in the toggle header */}
+        {!isMobile && <Typography variant="h6" gutterBottom>Input Assumptions</Typography>}
         
         {/* Preset Selector */}
         <Box sx={{ mb: 3 }}>
@@ -84,7 +90,7 @@ export default function InputForm({
         </Box>
         
         <form onSubmit={onSubmit} style={{ height: '100%' }}>
-          <Stack spacing={3} sx={{ pb: 2 }}>
+          <Stack spacing={isMobile ? 2 : 3} sx={{ pb: 2 }}>
             <Box>
               <Typography variant="subtitle2" color="primary" gutterBottom sx={{ mt: 1 }}>
                 Property Details
@@ -267,18 +273,20 @@ export default function InputForm({
                 />
               </Stack>
             </Box>
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={isLoading}
-              startIcon={<CalculateIcon />}
-              sx={{ mt: 2 }}
-              fullWidth
-            >
-              {isLoading ? 'Calculating...' : 'Calculate'}
-            </Button>
           </Stack>
+          
+          {/* Only show button if we're not on mobile or if on mobile and expanded */}
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            disabled={isLoading}
+            startIcon={<CalculateIcon />}
+            sx={{ mt: 2 }}
+          >
+            {isLoading ? 'Calculating...' : 'Calculate'}
+          </Button>
         </form>
       </CardContent>
     </Card>

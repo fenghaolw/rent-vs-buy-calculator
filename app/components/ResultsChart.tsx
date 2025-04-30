@@ -1,16 +1,223 @@
+'use client';
+
+import { useRef, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { CalculationResults, FormData } from '../types';
 
+// Register only the chart components we need
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// Props for the Optimized Chart component
+export interface OptimizedChartProps {
+  chartData: {
+    labels: number[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      backgroundColor: string;
+      tension: number;
+      homeEquity?: number[];
+      investments?: number[];
+      accumulatedCosts?: number[];
+      sellingCosts?: number[];
+      homeValues?: number[];
+      remainingMortgage?: number[];
+    }[];
+  };
+  onYearSelect: (yearIndex: number | null) => void;
+}
+
+// Props for the wrapper component
 interface ResultsChartProps {
   results: CalculationResults | null;
   formData: FormData;
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0
+  }).format(value);
+};
+
+// Simplify chart options to prevent re-rendering issues
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  plugins: {
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      callbacks: {
+        // Enhanced tooltip that shows a breakdown of financial position components
+        title: function(tooltipItems: any[]) {
+          if (tooltipItems.length > 0) {
+            const item = tooltipItems[0];
+            return `Year ${item.label}`;
+          }
+          return '';
+        },
+        label: function(context: any) {
+          const label = context.dataset.label || '';
+          const value = formatCurrency(context.parsed.y);
+          
+          // Return the basic label first
+          return `${label} Financial Position: ${value}`;
+        },
+        afterLabel: function(context: any) {
+          const dataset = context.dataset;
+          const index = context.dataIndex;
+          
+          // Create a breakdown for each scenario
+          if (dataset.label === 'Buy') {
+            const homeValue = dataset.homeValues?.[index] || 0;
+            const mortgage = dataset.remainingMortgage?.[index] || 0;
+            const equity = dataset.homeEquity?.[index] || 0;
+            const costs = dataset.accumulatedCosts?.[index] || 0;
+            const sellingCosts = dataset.sellingCosts?.[index] || 0;
+            
+            return [
+              `Home Equity: ${formatCurrency(equity)}`,
+              `  • Home Value: ${formatCurrency(homeValue)}`,
+              `  • Mortgage: ${formatCurrency(mortgage)}`,
+              `Selling Costs: ${formatCurrency(sellingCosts)} (if sold)`,
+              `Accumulated Costs: ${formatCurrency(costs)} (total paid over ${index + 1} years)`
+            ];
+          } else if (dataset.label === 'Rent') {
+            const investments = dataset.investments?.[index] || 0;
+            const costs = dataset.accumulatedCosts?.[index] || 0;
+            
+            return [
+              `Investments: ${formatCurrency(investments)} (savings + growth)`,
+              `Accumulated Rent: ${formatCurrency(costs)} (total paid over ${index + 1} years)`
+            ];
+          }
+          
+          return '';
+        }
+      }
+    },
+    legend: {
+      position: 'top' as const,
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Financial Position ($)'
+      },
+      ticks: {
+        callback: function(value: any) {
+          return formatCurrency(value as number);
+        }
+      }
+    },
+    x: {
+      min: 1,
+      title: {
+        display: true,
+        text: 'Years'
+      },
+      ticks: {
+        callback: function(value: any) {
+          if (Number.isInteger(Number(value)) && Number(value) >= 1) {
+            return `Year ${value}`;
+          }
+          return '';
+        }
+      }
+    }
+  }
+};
+
+// Optimized chart component that can be dynamically imported
+export const OptimizedChart = ({ chartData, onYearSelect }: OptimizedChartProps) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+  
+  // Create chart options with click handler
+  const optionsWithClick = {
+    ...chartOptions,
+    onClick: (event: any, elements: any) => {
+      if (elements && elements.length > 0) {
+        const clickedIndex = elements[0].index;
+        onYearSelect(clickedIndex);
+        
+        // Force maintain the chart dimensions after click
+        if (chartRef.current) {
+          const currentHeight = chartRef.current.offsetHeight;
+          if (currentHeight > 0) {
+            chartRef.current.style.minHeight = `${currentHeight}px`;
+          }
+        }
+      }
+    }
+  };
+
+  // Set up click outside detection
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      // Find chart canvas
+      const canvas = document.querySelector('canvas');
+      
+      // If click is outside canvas, reset selection
+      if (canvas && !canvas.contains(e.target as Node)) {
+        onYearSelect(null);
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [onYearSelect]);
+
+  return (
+    <div ref={chartRef} style={{ 
+      width: '100%', 
+      height: '100%', 
+      position: 'relative',
+      minHeight: '350px',  // Ensure minimum height
+    }}>
+      <Line 
+        data={chartData} 
+        options={optionsWithClick}
+      />
+    </div>
+  );
+};
+
+// Original component is just a wrapper that imports and uses OptimizedChart
 export default function ResultsChart({ results, formData }: ResultsChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'USD', 
       maximumFractionDigits: 0
     }).format(value);
   };

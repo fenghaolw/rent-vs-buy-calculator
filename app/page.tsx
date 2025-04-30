@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, Suspense } from 'react';
+import { useState, useMemo, useCallback, Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputForm from './components/InputForm';
 import Results from './components/Results';
@@ -8,17 +8,24 @@ import ThemeToggle from './components/ThemeToggle';
 import { calculateResults } from './utils/calculations';
 import { encodeFormData } from './utils/urlEncoder';
 import { FormData } from './types';
-import { Container, Typography, Paper, Box, useMediaQuery, useTheme, AppBar, Toolbar, Button, Snackbar, IconButton } from '@mui/material';
+import { Container, Typography, Paper, Box, useMediaQuery, useTheme, AppBar, Toolbar, Button, Snackbar, IconButton, Collapse } from '@mui/material';
 import { presets } from './data/presets';
 import ShareIcon from '@mui/icons-material/Share';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import UrlParamsHandler from './components/UrlParamsHandler';
 
 export default function Home() {
   const theme = useTheme();
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [inputsExpanded, setInputsExpanded] = useState(false);
   
+  useEffect(() => {
+    setInputsExpanded(!isMobile);
+  }, [isMobile]);
+
   const [formData, setFormData] = useState<FormData>({
     home_price: 500000,
     down_payment_percent: 20,
@@ -129,7 +136,7 @@ export default function Home() {
   };
 
   // Calculate a consistent height for the containers
-  const CONTENT_HEIGHT = isMobile ? 'auto' : 'calc(100vh - 180px)';
+  const CONTENT_HEIGHT = 'auto';
 
   // State to track the selected year for detailed view
   const [selectedYearIndex, setSelectedYearIndex] = useState<number | null>(null);
@@ -138,17 +145,43 @@ export default function Home() {
   const handleYearSelect = useCallback((yearIndex: number | null) => {
     setSelectedYearIndex(yearIndex);
   }, []);
-
-  // Memoize the chart component to prevent re-renders
+  
+  // Only create chart component when results exist
   const chartComponent = useMemo(() => {
     if (!results) return null;
+    
+    // Dynamically import Results.Chart with code splitting
+    const ResultsChart = () => (
+      <Suspense fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Typography>Loading chart...</Typography>
+        </Box>
+      }>
+        <Results.Chart 
+          chartData={results.chartData} 
+          onYearSelect={handleYearSelect}
+        />
+      </Suspense>
+    );
+    
+    return <ResultsChart />;
+  }, [results, handleYearSelect]);
+
+  // Memoize the summary component as well
+  const summaryComponent = useMemo(() => {
+    if (!results) return null;
+    
     return (
-      <Results.Chart 
-        chartData={results.chartData} 
-        onYearSelect={handleYearSelect}
+      <Results.Summary 
+        crossoverYear={results.crossover_year}
+        finalBuyNetWorth={results.final_buy_net_worth}
+        finalRentNetWorth={results.final_rent_net_worth}
+        analysisYears={formData.analysis_period_years}
+        chartData={results.chartData}
+        selectedYearIndex={selectedYearIndex}
       />
     );
-  }, [results, handleYearSelect]);
+  }, [results, formData.analysis_period_years, selectedYearIndex]);
 
   // Handlers for the UrlParamsHandler
   const handleFormDataUpdate = useCallback((data: FormData) => {
@@ -201,16 +234,55 @@ export default function Home() {
           <Box sx={{ 
             width: { xs: '100%', md: 300 },
             flexShrink: 0,
-            height: { xs: 'auto', md: CONTENT_HEIGHT }
+            height: CONTENT_HEIGHT
           }}>
-            <InputForm
-              formData={formData}
-              isLoading={isLoading}
-              onInputChange={handleInputChange}
-              onSubmit={handleSubmit}
-              onPresetSelect={handlePresetSelect}
-              selectedPresetId={selectedPresetId}
-            />
+            {/* Mobile toggle button */}
+            {isMobile && (
+              <Paper 
+                elevation={3} 
+                sx={{ 
+                  p: 2, 
+                  mb: 2, 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <Typography variant="h6">Input Parameters</Typography>
+                <IconButton 
+                  onClick={() => setInputsExpanded(!inputsExpanded)}
+                  size="small"
+                >
+                  {inputsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </IconButton>
+              </Paper>
+            )}
+            
+            {/* Collapsible input form - forced visible on desktop */}
+            <Collapse in={inputsExpanded} timeout="auto">
+              <InputForm
+                formData={formData}
+                isLoading={isLoading}
+                onInputChange={handleInputChange}
+                onSubmit={handleSubmit}
+                onPresetSelect={handlePresetSelect}
+                selectedPresetId={selectedPresetId}
+              />
+            </Collapse>
+
+            {/* Mobile Calculate button outside collapse when inputs are hidden */}
+            {isMobile && !inputsExpanded && (
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                onClick={handleSubmit}
+                disabled={isLoading}
+                sx={{ mb: 2 }}
+              >
+                {isLoading ? 'Calculating...' : 'Calculate'}
+              </Button>
+            )}
           </Box>
           
           {/* Results Content */}
@@ -220,10 +292,18 @@ export default function Home() {
               display: 'flex', 
               flexDirection: 'column', 
               minWidth: 0,
-              height: { xs: 'auto', md: CONTENT_HEIGHT }
+              height: CONTENT_HEIGHT
             }}>
               {/* Chart - Takes most of the space */}
-              <Paper elevation={3} sx={{ p: 3, mb: 3, flex: 3, position: 'relative' }}>
+              <Paper elevation={3} sx={{ 
+                p: 3, 
+                mb: 3, 
+                flex: 3, 
+                position: 'relative',
+                height: isMobile ? '420px' : '500px', // Fixed height for both mobile and desktop
+                overflow: 'hidden',
+                minHeight: isMobile ? '420px' : '500px', // Ensure minimum height is maintained even when selected
+              }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">Financial Position Comparison</Typography>
                   <Button 
@@ -236,7 +316,7 @@ export default function Home() {
                   </Button>
                 </Box>
                 
-                {/* Absolutely positioned chart container to prevent layout influence */}
+                {/* Fixed height chart container for consistent sizing */}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -244,14 +324,15 @@ export default function Home() {
                     left: '24px',
                     right: '24px',
                     bottom: '24px',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    minHeight: isMobile ? '350px' : '400px', // Minimum height in case of layout shifts
                   }}
                 >
-                  {/* Fixed height container that prevents any dynamic resizing */}
+                  {/* Chart container with fixed dimensions */}
                   <div id="chart-container" style={{ 
                     width: '100%', 
-                    height: isMobile ? '300px' : '100%',
-                    maxHeight: '500px'
+                    height: '100%',  // Always use 100% and let the parent control sizing
+                    pointerEvents: 'auto', // Ensure clicks are captured
                   }}>
                     {chartComponent}
                   </div>
@@ -259,20 +340,19 @@ export default function Home() {
               </Paper>
               
               {/* Summary - Takes less space at the bottom */}
-              <Paper elevation={3} sx={{ p: 3, flex: 1 }}>
-                <Typography variant="h6" gutterBottom>
+              <Paper elevation={3} sx={{ 
+                p: { xs: 2, sm: 2.5 },  // Reduced padding
+                flex: 1,
+                minHeight: isMobile ? '200px' : '250px', // Ensure summary has stable minimum height
+                overflow: 'auto', // Add scrolling if content is too large
+                maxHeight: isMobile ? '400px' : '500px', // Limit maximum height to prevent excessive growth
+              }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
                   {selectedYearIndex !== null 
-                    ? `Year ${results.chartData.labels[selectedYearIndex]} Details` 
+                    ? `Year ${results.chartData.labels[selectedYearIndex]}` 
                     : 'Summary'}
                 </Typography>
-                <Results.Summary 
-                  crossoverYear={results.crossover_year}
-                  finalBuyNetWorth={results.final_buy_net_worth}
-                  finalRentNetWorth={results.final_rent_net_worth}
-                  analysisYears={formData.analysis_period_years}
-                  chartData={results.chartData}
-                  selectedYearIndex={selectedYearIndex}
-                />
+                {summaryComponent}
               </Paper>
             </Box>
           )}
@@ -281,7 +361,7 @@ export default function Home() {
           {!results && (
             <Box sx={{ 
               flex: 1,
-              height: { xs: 300, md: CONTENT_HEIGHT }
+              height: { xs: 300, md: 'auto' }
             }}>
               <Paper elevation={3} sx={{ 
                 p: 4, 
