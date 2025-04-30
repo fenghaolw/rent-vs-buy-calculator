@@ -8,12 +8,14 @@ import ThemeToggle from './components/ThemeToggle';
 import { calculateResults } from './utils/calculations';
 import { encodeFormData } from './utils/urlEncoder';
 import { FormData } from './types';
-import { Container, Typography, Paper, Box, useMediaQuery, useTheme, AppBar, Toolbar, Button, Snackbar, IconButton, Collapse } from '@mui/material';
+import { Container, Typography, Paper, Box, useMediaQuery, useTheme, AppBar, Toolbar, Button, Snackbar, IconButton, Collapse, Tooltip } from '@mui/material';
 import { presets } from './data/presets';
 import ShareIcon from '@mui/icons-material/Share';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import UrlParamsHandler from './components/UrlParamsHandler';
 
 export default function Home() {
@@ -219,7 +221,23 @@ export default function Home() {
           <Typography variant="h5" component="h1" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             Rent vs Buy Calculator
           </Typography>
+          <Button 
+            color="primary"
+            onClick={() => router.push('/faq')}
+            sx={{ mr: 2 }}
+            startIcon={<HelpOutlineIcon />}
+          >
+            FAQ
+          </Button>
           <ThemeToggle />
+          <Tooltip title="Buy me a coffee">
+            <IconButton 
+              color="inherit"
+              onClick={() => window.open('https://paypal.me/fenghaolw', '_blank')}
+            >
+              <LocalCafeIcon />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 

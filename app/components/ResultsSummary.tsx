@@ -11,6 +11,7 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { formatCurrency } from '../utils/chartComponents';
 
 interface YearData {
   year: number;
@@ -37,14 +38,6 @@ export interface ResultsSummaryProps {
   analysisYears: number;
   selectedYearData?: YearData | null;
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value);
-};
 
 export default function ResultsSummary({ 
   crossoverYear, 

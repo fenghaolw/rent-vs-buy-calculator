@@ -3,7 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
+  ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -11,19 +11,11 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+  formatCurrency
+} from '../utils/chartComponents';
 import { CalculationResults, FormData } from '../types';
 
-// Register only the chart components we need
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+// No need to register components again, they're already registered in the barrel file
 
 // Props for the Optimized Chart component
 export interface OptimizedChartProps {
@@ -51,14 +43,6 @@ interface ResultsChartProps {
   results: CalculationResults | null;
   formData: FormData;
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value);
-};
 
 // Simplify chart options to prevent re-rendering issues
 const chartOptions = {

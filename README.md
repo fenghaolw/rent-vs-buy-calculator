@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rent vs Buy Calculator
+
+An interactive web application that helps users compare the long-term financial implications of renting versus buying a home. This calculator provides detailed visualizations and breakdowns of costs over time.
+
+Mostly generated via vibe coding in Cursor (https://www.cursor.com/), with claude 3.7-sonnet model.
+
+## Features
+
+- **Interactive Comparison**: Visualize the financial position of renting vs buying over time
+- **Detailed Breakdowns**: See year-by-year financial positions with mortgage and investment details
+- **Customizable Assumptions**: Adjust all parameters (mortgage rates, property taxes, investment returns, etc.)
+- **URL Parameter Sharing**: Share your calculations via URL
+- **Preset Scenarios**: Choose from common financial scenarios or create your own
+- **Responsive Design**: Works on desktop and mobile devices
+- **Dark/Light Mode**: Choose your preferred color theme
+- **Interactive Charts**: Click on chart points to see detailed year-specific information
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **UI Library**: Material UI v7 with optimized Next.js integration
+- **Charts**: Chart.js with react-chartjs-2
+- **Styling**: Emotion (MUI's styling solution)
+- **Optimizations**:
+  - Dynamic imports and code splitting
+  - Tree-shaking for Chart.js
+  - CSS optimization with critters
+  - Bundle analysis
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.17 or later
+- npm 9.6.0 or later
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/rent-vs-buy.git
+   cd rent-vs-buy/frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) with your browser
+
+## Build and Deployment
+
+### Production Build
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Analyze Bundle
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run analyze
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+1. Enter your assumptions in the input form (home price, down payment, mortgage details, etc.)
+2. Click "Calculate" to see the comparison
+3. View the chart showing the financial positions over time
+4. Click on specific years in the chart to see detailed breakdowns
+5. Share your calculation by copying the URL
 
-To learn more about Next.js, take a look at the following resources:
+## Input Field Explanations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Property Details
+- **Home Price**: The purchase price of the home in dollars
+- **Down Payment (%)**: Percentage of the home price you'll pay upfront (affects loan amount and monthly payment)
+- **Mortgage Rate (%)**: Annual interest rate on your mortgage loan
+- **Mortgage Term (years)**: Length of the mortgage loan (typically 15 or 30 years)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Ownership Costs
+- **Property Tax Rate (%)**: Annual property tax as a percentage of home value (varies by location)
+- **Annual Home Insurance**: Yearly cost to insure your home against damage
+- **Maintenance (% of home value)**: Estimated annual maintenance costs as a percentage of home value
+- **Agent Fee (%)**: Real estate agent commission when selling the home (typically 5-6%)
 
-## Deploy on Vercel
+### Renting & Investment
+- **Monthly Rent**: Amount paid monthly to rent a comparable property
+- **Rent Increase Rate (%)**: Expected annual percentage increase in rent
+- **Investment Return Rate (%)**: Expected annual return on investments (for down payment and monthly savings)
+- **Home Appreciation Rate (%)**: Expected annual percentage increase in home value
+- **Analysis Period (years)**: Number of years to analyze the rent vs buy comparison
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The calculator takes these inputs to simulate two scenarios:
+1. **Buying**: Taking a mortgage, paying property tax, insurance, and maintenance, while building equity
+2. **Renting**: Paying rent while investing the equivalent of the down payment plus the difference between monthly rent and the total monthly cost of owning
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The financial position for each scenario is calculated year by year, accounting for home appreciation, investment returns, mortgage payments, and all associated costs.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Created as a tool to help people make informed housing decisions
+- Inspired by the complex financial trade-offs between renting and buying

@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ReactNode, createContext, useContext, useState, useEffect } from 'react';
 
@@ -141,11 +142,13 @@ export default function ThemeRegistry({ children }: { children: ReactNode }) {
   };
   
   return (
-    <ColorModeContext.Provider value={{ mode, setMode: handleSetMode, resolvedMode }}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
-    </ColorModeContext.Provider>
+    <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+      <ColorModeContext.Provider value={{ mode, setMode: handleSetMode, resolvedMode }}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
+      </ColorModeContext.Provider>
+    </AppRouterCacheProvider>
   );
 } 
