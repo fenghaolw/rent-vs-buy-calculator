@@ -64,7 +64,7 @@ export const calculateResults = (formData: FormData): CalculationResults => {
     
     // Maintenance cost increases with inflation, but also scales with home value
     // This balances between inflation growth and the fact that maintaining a more expensive home costs more
-    maintenanceCosts[i] = homeValues[i] * (formData.maintenance_percent / 100) / 12 * 
+    maintenanceCosts[i] = (formData.home_price * (formData.maintenance_percent / 100) / 12) * 
                           Math.pow(1 + monthlyInflationRate, i);
     
     // Insurance costs increase with inflation
@@ -146,12 +146,10 @@ export const calculateResults = (formData: FormData): CalculationResults => {
     renterInvestments[i] = renterInvestments[i-1] * (1 + monthlyInvestmentReturn);
     
     // Add the difference between total ownership cost and rent to investments
-    // If rent < total cost of ownership, the renter can invest the difference
+    // If rent < total cost of ownership, the renter can invest the difference.
+    // If rent > total cost of ownership, this will be negative, reducing the investment.
     const additionalInvestment = monthlyMortgage + monthlyHousingCosts[i] - monthlyRent[i];
-    if (additionalInvestment > 0) {
-      // Assume this is invested monthly
-      renterInvestments[i] += additionalInvestment;
-    }
+    renterInvestments[i] += additionalInvestment;
     
     // Financial position = investments - accumulated costs
     renterFinancialPosition[i] = renterInvestments[i] - renterAccumulatedCosts[i];
@@ -183,6 +181,8 @@ export const calculateResults = (formData: FormData): CalculationResults => {
   const yearlyRenterCosts = new Array(numYears);
   const yearlyHomeValues = new Array(numYears);
   const yearlyRemainingMortgage = new Array(numYears);
+  const yearlyTotalOwnershipCost = new Array(numYears); // Added
+  const yearlyTotalRent = new Array(numYears);         // Added
   
   // Populate with data from years 1 through analysis_period_years
   for (let year = 1; year <= numYears; year++) {
@@ -202,6 +202,17 @@ export const calculateResults = (formData: FormData): CalculationResults => {
     yearlyRenterData[arrayIndex] = renterFinancialPosition[monthIndex];
     yearlyRenterInvestments[arrayIndex] = renterInvestments[monthIndex];
     yearlyRenterCosts[arrayIndex] = renterAccumulatedCosts[monthIndex];
+
+    // Calculate yearly total ownership cost and rent for this year
+    let currentYearTotalOwnershipCost = 0;
+    let currentYearTotalRent = 0;
+    for (let m = 1; m <= 12; m++) {
+      const currentMonthIndex = (year - 1) * 12 + m;
+      currentYearTotalOwnershipCost += (monthlyMortgage + monthlyHousingCosts[currentMonthIndex]);
+      currentYearTotalRent += monthlyRent[currentMonthIndex];
+    }
+    yearlyTotalOwnershipCost[arrayIndex] = currentYearTotalOwnershipCost;
+    yearlyTotalRent[arrayIndex] = currentYearTotalRent;
   }
   
   // Prepare chart data with yearly points from 1 to analysis_period_years
@@ -239,6 +250,9 @@ export const calculateResults = (formData: FormData): CalculationResults => {
     chartData,
     crossover_year: crossoverYear,
     final_buy_net_worth: buyerFinancialPosition[months],
-    final_rent_net_worth: renterFinancialPosition[months]
+    final_rent_net_worth: renterFinancialPosition[months],
+    maintenanceCosts: maintenanceCosts,
+    yearlyTotalOwnershipCost: yearlyTotalOwnershipCost, // Added
+    yearlyTotalRent: yearlyTotalRent                   // Added
   };
 }; 
