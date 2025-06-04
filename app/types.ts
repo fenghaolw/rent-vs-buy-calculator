@@ -28,4 +28,7 @@ export interface CalculationResults {
   crossover_year: number | null;
   final_buy_net_worth: number;
   final_rent_net_worth: number;
+  maintenanceCosts: number[];
+  yearlyTotalOwnershipCost: number[];
+  yearlyTotalRent: number[];
 } 
